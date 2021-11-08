@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "dev": "esbuild --bundle src/main.ts --outfile=bundle.js --serve --servedir=. --sourcemap=inline"
+  },
+  "dependencies": {
+    "esbuild": "^0.13.12"
+  }
+}
