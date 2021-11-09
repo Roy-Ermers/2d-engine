@@ -1,6 +1,7 @@
 import Color from './Color.js';
+import Vector2 from './Data/Vector2';
 import { DEGREE_TO_RADIAL } from './Helpers.js';
-import { Position } from './Shape.js';
+import { Shape } from './Shape';
 
 export default class Canvas {
 
@@ -19,7 +20,6 @@ export default class Canvas {
     constructor() {
         this.canvas = document.createElement("canvas");
         this.ctx = this.canvas.getContext("2d")!;
-        // this._background = new Color(0, 0, 0);
 
         document.body.appendChild(this.canvas);
 
@@ -34,37 +34,37 @@ export default class Canvas {
             this._background = color;
     }
 
-    circle(position: Position, width: number, color: Color, arc: [number, number] = [0, Math.PI * 2]) {
+    circle(position: Vector2, width: number, color: Color, arc: [number, number] = [0, Math.PI * 2]) {
         this.ctx.beginPath();
         this.ctx.lineCap = "round";
         this.ctx.fillStyle = color.toString();
 
-        this.ctx.arc(position[0], position[1], width, arc[0], arc[1]);
+        this.ctx.arc(position.x, position.y, width, arc[0], arc[1]);
         this.ctx.fill();
         this.ctx.closePath();
     }
 
-    box(position: Position, color: Color, size: number): void;
-    box(position: Position, color: Color, size: [number, number]): void;
-    box(position: Position, color: Color, size: [number, number] | number = [1, 1]) {
+    box(position: Vector2, color: Color, size: number): void;
+    box(position: Vector2, color: Color, size: Vector2): void;
+    box(position: Vector2, color: Color, size: Vector2 | number = Vector2.one) {
         this.ctx.beginPath();
         this.ctx.lineCap = "round";
         this.ctx.fillStyle = color.toString();
 
-        const width = typeof size == "number" ? size : size[0];
-        const height = typeof size == "number" ? size : size[1];
-        this.ctx.fillRect(position[0], position[1], width, height);
+        const width = typeof size == "number" ? size : size.x;
+        const height = typeof size == "number" ? size : size.y;
+        this.ctx.fillRect(position.x, position.y, width, height);
         this.ctx.closePath();
     }
 
-    polygon(position: Position, color: Color, indices: Position[]) {
+    polygon(position: Vector2, color: Color, indices: Vector2[]) {
         this.ctx.beginPath();
         this.ctx.lineCap = "round";
         this.ctx.strokeStyle = color.toString();
-        this.ctx.moveTo(position[0], position[1]);
+        this.ctx.moveTo(position.x, position.y);
 
         for (const index of indices) {
-            this.ctx.lineTo(position[0] + index[0], position[1] + index[1]);
+            this.ctx.lineTo(position.x + index.x, position.y + index.y);
         }
 
         this.ctx.stroke();
@@ -84,20 +84,37 @@ export default class Canvas {
     }
 
     text(string: string, x: number = 0, y: number = 0, color: Color = Color.black, size: number = 16) {
-        console.log(color.toString());
         this.ctx.strokeStyle = color.toString();
         this.ctx.fillStyle = color.toString();
         this.ctx.font = `${size}px sans-serif`;
-        this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
 
         this.ctx.fillText(string, x, y);
     }
 
+    drawShape(origin: Vector2, shape: Shape) {
+        console.assert(shape !== undefined, "shape is undefined", shape);
+        const { color } = shape;
+        const position = shape.offset.add(origin);
+
+        switch (shape.type) {
+            case "box":
+                if (typeof shape.size == "number")
+                    this.box(position, color, shape.size);
+                else if (shape.size instanceof Vector2)
+                    this.box(position, color, shape.size);
+                break;
+            case "circle":
+                this.circle(position, shape.width, color, shape.arc);
+                break;
+            case "polygon":
+                this.polygon(position, color, shape.indices);
+                break;
+        }
+    }
+
     draw() {
-        if (this._background)
-            this.ctx.fillStyle = this._background.toString();
-        else this.ctx.fillStyle = Color.white.toString();
+        this.ctx.fillStyle = (this._background ?? Color.white).toString();
 
         this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fill();

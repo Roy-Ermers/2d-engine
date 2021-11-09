@@ -1,16 +1,17 @@
 import Color from './Color';
-export type Position = [number, number];
+import Vector2 from './Data/Vector2';
+
 export type Shape = {
-    position: [number, number],
+    offset: Vector2,
     color: Color;
 } & ({
     type: "box",
-    size?: [number, number] | number;
+    size?: Vector2 | number;
 } | {
     type: "circle",
     width: number,
     arc?: [number, number];
 } | {
     type: "polygon",
-    indices: [number, number][];
+    indices: Vector2[];
 });

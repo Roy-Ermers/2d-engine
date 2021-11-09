@@ -7,12 +7,7 @@ type modifierKeys = {
 
 export default class Keyboard {
     private static pressedKeys: Set<string> = new Set();
-    private static modifiers: modifierKeys = {
-        ctrl: false,
-        shift: false,
-        meta: false,
-        alt: false
-    };
+    private static currentFrame: Set<string> = new Set();
 
     public static initialize() {
         window.addEventListener("keydown", e => this.handleKeyDown(e));
@@ -20,36 +15,54 @@ export default class Keyboard {
     }
 
     private static handleKeyDown(event: KeyboardEvent) {
-        this.pressedKeys.add(event.key);
+        this.addKey(event.key.toLowerCase());
 
-        this.modifiers.ctrl = event.ctrlKey;
-        this.modifiers.shift = event.shiftKey;
-        this.modifiers.meta = event.metaKey;
-        this.modifiers.alt = event.altKey;
+        if (event.ctrlKey)
+            this.addKey("ctrl");
 
+        if (event.shiftKey)
+            this.addKey("shift");
+
+        if (event.metaKey)
+            this.addKey("meta");
+
+        if (event.altKey)
+            this.addKey("alt");
     }
 
     private static handleKeyUp(event: KeyboardEvent) {
-        this.pressedKeys.delete(event.key);
+        this.pressedKeys.delete(event.key.toLowerCase());
 
-        this.modifiers.ctrl = event.ctrlKey;
-        this.modifiers.shift = event.shiftKey;
-        this.modifiers.meta = event.metaKey;
-        this.modifiers.alt = event.altKey;
+        if (!event.ctrlKey)
+            this.pressedKeys.delete("ctrl");
+
+        if (!event.shiftKey)
+            this.pressedKeys.delete("shift");
+
+        if (!event.metaKey)
+            this.pressedKeys.delete("meta");
+
+        if (!event.altKey)
+            this.pressedKeys.delete("alt");
 
         event.preventDefault();
     }
 
-    public static isDown(key: string, modifiers?: Partial<modifierKeys>): boolean {
-        if (modifiers) {
-            for (const [key, pressed] of Object.entries(modifiers)) {
-                if (this.modifiers[key as keyof modifierKeys] !== pressed) {
-                    return false;
-                }
-            }
-        }
+    private static addKey(key: string) {
+        this.pressedKeys.add(key);
+        this.currentFrame.add(key);
+    }
 
-        return this.pressedKeys.has(key);
+    public static isDown(...keys: string[]): boolean {
+        return !keys.some(x => !this.pressedKeys.has(x));
+    }
+
+    public static isPressed(...keys: string[]): boolean {
+        return !keys.some(x => !this.currentFrame.has(x));
+    }
+
+    public static clearFrame() {
+        this.currentFrame.clear();
     }
 }
 

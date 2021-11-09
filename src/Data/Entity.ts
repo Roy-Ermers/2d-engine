@@ -1,73 +1,74 @@
 import Game from '../Game';
+import Vector2 from './Vector2';
 
 export default class Entity {
     public tags: Set<string>;
     private components: Set<string>;
     public data: Record<string, any> = {
-        position: [0, 0]
+        position: new Vector2()
     };
 
+    public get position(): Vector2 {
+        return this.data.position;
+    }
+
+    public set position(value: Vector2) {
+        this.data.position = value;
+    }
 
     constructor();
-    constructor(firstComponent: string, ...components: string[]);
+    constructor(components: string[]);
     constructor(components: Record<string, any>);
     constructor(component: string, data?: Record<string, any>);
-    constructor(firstComponent?: string | Record<string, any>, ...components: ([Record<string, any>?] | string[])) {
-        if (firstComponent)
-            this.addComponent(firstComponent, ...components);
+    constructor(component?: string | Record<string, any> | string[], data?: Record<string, any>) {
+        if (component)
+            this.addComponent(component);
 
         this.tags = new Set();
         this.components = new Set();
     }
 
-    addComponent(firstComponent: string, ...components: string[]): void;
+    addComponent(components: string[]): void;
     addComponent(components: Record<string, any>): void;
-    addComponent(component: string, data?: Record<string, any>): void;
-    addComponent(firstComponent: string | Record<string, any>, ...components: ([Record<string, any>?] | string[])): void;
-    addComponent(firstComponent: string | Record<string, any>, ...components: ([Record<string, any>?] | string[])) {
-        if (typeof firstComponent == "object") {
-            for (const [name, data] of Object.entries(firstComponent)) {
-                const component = Game.components.get(name);
-                if (!component)
-                    throw new Error(`Component "${name}" not found. Make sure you call Game.registerComponent first`);
-
-                this.components.add(name);
-                this.data = { ...this.data, ...data };
+    addComponent(component: string): void;
+    addComponent(component: string, data: Record<string, any>): void;
+    addComponent(component: string | Record<string, any> | string[], data?: Record<string, any>): void;
+    addComponent(component: string | Record<string, any> | string[], data?: Record<string, any>) {
+        if (Array.isArray(component)) {
+            for (const name of component) {
+                this.addComponent(name);
             }
+
+            return;
         }
 
-        else if (typeof firstComponent == "string") {
-            const component = Game.components.get(firstComponent);
-            const data = components[0];
-
-            if (!component)
-                throw new Error(`Component "${firstComponent}" not found. Make sure you call Game.registerComponent first`);
-
-            this.components.add(firstComponent);
-            if (typeof data == "object")
-                this.data = { ...this.data, ...data };
-
-            else
-                this.data = { ...this.data, ...component.defaults };
-        }
-
-        for (const name of components) {
-            if (typeof name == "string") {
-                const component = Game.components.get(name);
-                if (!component)
-                    throw new Error(`Component "${name}" not found. Make sure you call Game.registerComponent first`);
-
-                this.components.add(name);
-                this.data = { ...this.data, ...component.defaults };
+        else if (typeof component == "object") {
+            for (const [name, data] of Object.entries(component)) {
+                this.addComponent(name, data);
             }
+
+            return;
         }
 
-        console.log(this.data);
+        if (typeof component != 'string')
+            throw new Error("Unknown method signature");
+
+        const newcomponent = Game.components.get(component);
+
+        if (!newcomponent)
+            throw new Error(`Component "${component}" not found. Make sure you call Game.registerComponent first`);
+
+        this.addComponent(newcomponent.dependencies);
+
+        this.data = { ...this.data, ...(data ?? newcomponent.defaults) };
+        this.components.add(component);
+
+        newcomponent.start(this.data, this);
     }
 
     update() {
         for (const component of this.components) {
-            Game.components.get(component)?.update(this.data);
+            Game.components.get(component)?.update(this.data, this);
         }
     }
 

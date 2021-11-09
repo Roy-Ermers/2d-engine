@@ -5,10 +5,10 @@ import Keyboard from './Keyboard';
 
 export default class Game {
     private static _canvas: Canvas = new Canvas();
-    private static entities: Entity[] = [];
-    private static _components: Map<string, Component<any>> = new Map();
-
+    private static _entities: Entity[] = [];
+    private static _components: Map<string, Component> = new Map();
     private static _starttime = 0;
+    private static updateCallbacks: (() => void)[] = [];
 
     public static get time() {
         return performance.now() - this._starttime;
@@ -39,11 +39,19 @@ export default class Game {
         requestAnimationFrame(this.loop.bind(this));
     }
 
+    public static getEntity(...tags: string[]) {
+        return this._entities.find(x => !tags.some(y => !x.tags.has(y)));
+    }
+
     public static getEntities(...tags: string[]) {
         if (tags.length == 0)
-            return this.entities;
+            return this._entities;
 
-        return this.entities.filter(x => !tags.some(y => !x.tags.has(y)));
+        return this._entities.filter(x => !tags.some(y => !x.tags.has(y)));
+    }
+
+    public static registerEntity(entity: Entity) {
+        this._entities.push(entity);
     }
 
     public static createEntity(...tags: string[]) {
@@ -52,28 +60,40 @@ export default class Game {
         for (const tag of tags)
             entity.tags.add(tag);
 
-        this.entities.push(entity);
+        this._entities.push(entity);
         return entity;
     }
 
     public static registerComponent(...components: ComponentType<any>[]) {
         for (const component of components) {
-            this._components.set(component.identifier, new component());
+            this._components.set(component.name.replace(/Component$/g, ''), new component());
         }
     }
 
+    public static onUpdate(callback: () => void) {
+        this.updateCallbacks.push(callback);
+    }
+
     private static loop(frames?: number) {
-        requestAnimationFrame(this.loop.bind(this));
         this.canvas.draw();
 
-        if (Keyboard.isDown("escape"))
+        if (Keyboard.isPressed("escape"))
             this.paused = !this.paused;
 
-        if (this._paused)
-            return;
 
-        for (const entity of this.entities)
+        if (this._paused) {
+            for (const entity of this._entities.filter(x => x.hasComponent("Renderer")))
+                this._components.get("Renderer")?.update(entity.data, entity);
+        }
+        else {
+            for (const entity of this._entities)
             entity.update();
+
+            this.updateCallbacks.forEach(x => x());
+        }
+
+        Keyboard.clearFrame();
+        requestAnimationFrame(this.loop.bind(this));
     }
 }
 

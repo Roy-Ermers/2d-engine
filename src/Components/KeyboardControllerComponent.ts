@@ -1,36 +1,41 @@
 import Component from '../Data/Component';
+import Vector2 from '../Data/Vector2';
+import Game from '../Game';
 import Keyboard from '../Keyboard';
-import { Position } from '../Shape';
 
-export default class KeyboardControllerComponent extends Component<{ position: Position; speed: number; }> {
-    static readonly identifier = "KeyboardController";
+export default class KeyboardControllerComponent extends Component {
+
+    get dependencies(): string[] {
+        return ["Rigidbody"];
+    }
 
     defaults = {
-        position: [0, 0] as Position,
-        speed: 1
+        speed: 1,
+        velocity: new Vector2()
     };
 
-    start(): void { }
+    update(attributes: this['defaults']): void {
+        const { speed } = attributes;
 
-    destroy(): void { }
+        attributes.speed = Keyboard.isDown("shift") ? 7.5 : 5;
 
-    update(attributes: { position: Position; speed: number; }): void {
-        attributes.speed = Keyboard.isDown('shift') ? 5 : 1;
+        Game.canvas.text(Keyboard.isDown("shift").toString(), 0, 16);
 
         if (Keyboard.isDown("s")) {
-            attributes.position = [attributes.position[0], attributes.position[1] + attributes.speed];
+            attributes.velocity = attributes.velocity.add(Vector2.down.multiply(speed));
         }
 
         if (Keyboard.isDown("w")) {
-            attributes.position = [attributes.position[0], attributes.position[1] - attributes.speed];
+            attributes.velocity = attributes.velocity.add(Vector2.up.multiply(speed));
         }
 
         if (Keyboard.isDown("a")) {
-            attributes.position = [attributes.position[0] - attributes.speed, attributes.position[1]];
+            attributes.velocity = attributes.velocity.add(Vector2.left.multiply(speed));
         }
 
         if (Keyboard.isDown("d")) {
-            attributes.position = [attributes.position[0] + attributes.speed, attributes.position[1]];
+            attributes.velocity = attributes.velocity.add(Vector2.right.multiply(speed));
         }
     }
+
 }

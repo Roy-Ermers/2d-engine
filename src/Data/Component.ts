@@ -1,12 +1,16 @@
-export type ComponentType<T extends Component<any>> = (new (...parameters: ConstructorParameters<typeof Component>) => T) & typeof Component;
+import Entity from './Entity';
 
+export type ComponentType<T extends Component> = (new (...parameters: ConstructorParameters<typeof Component>) => T) & typeof Component;
 
-export default class Component<t> {
-    static readonly identifier: string = "Component";
-    defaults?: t;
+export default class Component {
+    get dependencies(): string[] {
+        return [];
+    }
+
+    defaults?: any;
 
     constructor() { }
-    start(attributes?: t): void { };
-    destroy(attributes?: t): void { };
-    update(attributes?: t): void { };
+    start(attributes: this["defaults"], entity: Entity): void { };
+    destroy(attributes: this["defaults"], entity: Entity): void { };
+    update(attributes: this["defaults"], entity: Entity): void { };
 }
