@@ -1,0 +1,9 @@
+{
+    "name": "level 1",
+    "entities": [
+        {
+            "tags": ["player"],
+            "components": []
+        }
+    ]
+}

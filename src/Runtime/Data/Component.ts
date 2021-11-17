@@ -1,4 +1,4 @@
-import Entity from './Entity';
+import Entity from '@/Data/Entity';
 
 export type ComponentType<T extends Component> = (new (...parameters: ConstructorParameters<typeof Component>) => T) & typeof Component;
 

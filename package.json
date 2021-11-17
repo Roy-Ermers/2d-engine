@@ -1,8 +1,10 @@
 {
+  "type": "module",
   "scripts": {
-    "dev": "esbuild --bundle src/main.ts --outfile=bundle.js --serve --servedir=. --sourcemap=inline"
+    "dev": "node ./build.js"
   },
   "dependencies": {
-    "esbuild": "^0.13.12"
+    "esbuild": "^0.13.12",
+    "tweakpane": "^3.0.5"
   }
 }

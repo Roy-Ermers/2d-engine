@@ -1,10 +1,3 @@
-type modifierKeys = {
-    ctrl: boolean;
-    shift: boolean;
-    meta: boolean;
-    alt: boolean;
-};
-
 export default class Keyboard {
     private static pressedKeys: Set<string> = new Set();
     private static currentFrame: Set<string> = new Set();

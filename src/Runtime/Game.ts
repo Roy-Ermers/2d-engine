@@ -1,20 +1,26 @@
-import Canvas from './Canvas';
-import Component, { ComponentType } from './Data/Component';
-import Entity from './Data/Entity';
-import Keyboard from './Keyboard';
+import Canvas from '@/Canvas';
+import Component, { ComponentType } from '@/Data/Component';
+import Entity from '@/Data/Entity';
+import Keyboard from '@/Keyboard';
 
 export default class Game {
     private static _canvas: Canvas = new Canvas();
     private static _entities: Entity[] = [];
     private static _components: Map<string, Component> = new Map();
-    private static _starttime = 0;
+    private static _time = 0;
     private static updateCallbacks: (() => void)[] = [];
 
-    public static get time() {
-        return performance.now() - this._starttime;
+    private static _paused = false;
+    private static _debug = true;
+
+    public static get debug() {
+        return this._debug;
     }
 
-    private static _paused = false;
+    public static get time() {
+        return this._time;
+    }
+
     public static get paused(): boolean {
         return this._paused;
     }
@@ -22,8 +28,9 @@ export default class Game {
     public static set paused(value) {
         this._paused = value;
 
-        if (!this._paused)
+        if (!this._paused) {
             this.start();
+        }
     }
 
     public static get canvas() {
@@ -34,8 +41,11 @@ export default class Game {
         return this._components;
     }
 
+    public static get entities() {
+        return this._entities;
+    }
+
     public static start() {
-        this._starttime = performance.now();
         requestAnimationFrame(this.loop.bind(this));
     }
 
@@ -74,20 +84,31 @@ export default class Game {
         this.updateCallbacks.push(callback);
     }
 
-    private static loop(frames?: number) {
+    private static loop() {
         this.canvas.draw();
+        this._time++;
+        if (this._time > 60)
+            this._time = 0;
 
-        if (Keyboard.isPressed("escape"))
+        if (Keyboard.isPressed("escape")) {
             this.paused = !this.paused;
+        }
+
+        if (Keyboard.isPressed("ctrl", "f1")) {
+            this._debug = !this._debug;
+            // import("./Debug/Debugger.js")
+            //     .then(x => { console.log(x); x.default.start(); })
+            //     .catch(e => console.error("Failed to load debugger", e));
+        }
 
 
         if (this._paused) {
-            for (const entity of this._entities.filter(x => x.hasComponent("Renderer")))
-                this._components.get("Renderer")?.update(entity.data, entity);
+            for (const entity of this._entities)
+                entity.render();
         }
         else {
             for (const entity of this._entities)
-            entity.update();
+                entity.update();
 
             this.updateCallbacks.forEach(x => x());
         }

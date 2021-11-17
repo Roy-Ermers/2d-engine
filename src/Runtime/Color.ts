@@ -1,10 +1,13 @@
-import { lerp } from './Helpers.js';
+import { lerp } from '@/Helpers';
+
+const colorCache = new Map<number, string>();
+
+(window as any).colorCache = colorCache;
 
 export default class Color {
-
     static red = new Color(255, 0, 0);
-    static blue = new Color(0, 255, 0);
-    static green = new Color(0, 0, 255);
+    static blue = new Color(0, 0, 255);
+    static green = new Color(0, 255, 0);
     static black = new Color(0, 0, 0, 1);
     static white = new Color(255, 255, 255);
 
@@ -39,7 +42,7 @@ export default class Color {
     }
 
     invert() {
-        return new Color(255 - this.r, 255 - this.g, 255 - this.b);
+        return new Color(255 - this.r, 255 - this.g, 255 - this.b, this.a);
     }
 
     /**
@@ -51,6 +54,10 @@ export default class Color {
             Math.floor(this.g * (1 - factor)),
             Math.floor(this.b * (1 - factor))
         );
+    }
+
+    copy() {
+        return this;
     }
 
     /**
@@ -74,6 +81,14 @@ export default class Color {
     }
 
     toString() {
-        return `#${this.r.toString(16).padStart(2, '0')}${this.g.toString(16).padStart(2, '0')}${this.b.toString(16).padStart(2, '0')}${(this.a * 255).toString(16).padStart(2, '0')}`;
+        const hash = 0xFFFF * this.r + 0xFF * this.g + this.b;
+
+        if (colorCache.has(hash))
+            return colorCache.get(hash)!;
+
+        const hex = `#${this.r.toString(16).padStart(2, '0')}${this.g.toString(16).padStart(2, '0')}${this.b.toString(16).padStart(2, '0')}${(this.a * 255).toString(16).padStart(2, '0')}`;
+        colorCache.set(hash, hex);
+
+        return hex;
     }
 }

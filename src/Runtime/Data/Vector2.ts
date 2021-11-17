@@ -1,4 +1,4 @@
-import { lerp } from '../Helpers';
+import { DEGREE_TO_RADIAL, lerp } from '@/Helpers';
 
 export default class Vector2 {
 
@@ -11,9 +11,17 @@ export default class Vector2 {
     static left = new Vector2(-1, 0);
     static right = new Vector2(1, 0);
 
+    static get random() {
+        return new Vector2(
+            Math.random(),
+            Math.random()
+        );
+    }
+
     get length() {
         return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
+
 
     constructor(public x: number = 0, public y: number = 0) { }
 
@@ -28,11 +36,30 @@ export default class Vector2 {
         return (this.x * test.x) + (this.y * test.y);
     }
 
+    distance(goal: Vector2) {
+        return Math.sqrt(
+            (goal.x - this.x) ** 2
+            +
+            (goal.y - this.y) ** 2
+        );
+    }
+
     invert() {
         return this.multiply(-1);
     }
 
+    rotate(degrees: number) {
+        const radials = degrees * DEGREE_TO_RADIAL;
+
+        return new Vector2(
+            this.x * Math.cos(radials) - this.y * Math.sin(radials),
+            this.x * Math.sin(radials) + this.y * Math.cos(radials),
+        );
+    }
+
     normalize() {
+        if (this.length == 0)
+            return this;
         return this.divide(this.length);
     }
 
@@ -44,7 +71,7 @@ export default class Vector2 {
     }
 
     multiply(x: number): Vector2;
-    multiply(x: number, u: number): Vector2;
+    multiply(x: number, y: number): Vector2;
     multiply(vector: Vector2): Vector2;
     multiply(vector: number | Vector2, y?: number) {
         if (vector instanceof Vector2)
@@ -105,6 +132,18 @@ export default class Vector2 {
             this.x - vector,
             this.y - (y ?? vector)
         );
+    }
+
+    static fromAngle(angle: number) {
+        const radians = angle * DEGREE_TO_RADIAL;
+        return new Vector2(
+            Math.sin(radians),
+            -Math.cos(radians)
+        );
+    }
+
+    copy() {
+        return this;
     }
 
     toString() {
