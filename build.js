@@ -1,14 +1,23 @@
 /// <references lib="@types/node" />
 import * as esbuild from "esbuild";
-import { rm, stat } from "fs/promises";
+import { rm, stat, copyFile, mkdir } from "fs/promises";
+import { resolve, join } from 'path';
 const fileExists = async path => !!(await stat(path).catch(() => false));
 const cleanPlugin = {
     name: "clean build",
 
     setup(build) {
         build.onStart(async () => {
-            if (await fileExists(build.initialOptions.outdir))
-                await rm(build.initialOptions.outdir, { recursive: true });
+            console.clear();
+            const buildDir = resolve(build.initialOptions.outdir);
+            if (await fileExists(buildDir))
+                await rm(buildDir, { recursive: true });
+
+            await mkdir(buildDir);
+
+            const html = resolve("index.html");
+            const target = join(buildDir, "index.html");
+            await copyFile(html, target)
         });
     }
 };
@@ -24,7 +33,7 @@ esbuild.build({
     splitting: true,
     keepNames: true,
     sourcemap: 'inline',
-    watch: true,
+    watch: process.env.NODE_ENV != 'production',
     logLevel: "info",
     plugins: [cleanPlugin]
 }).catch(process.exit).then(e => {

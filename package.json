@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "dev": "node ./build.js"
+    "dev": "node ./build.js",
+    "build": "NODE_ENV=production node ./build.js"
   },
   "dependencies": {
     "esbuild": "^0.13.12",
