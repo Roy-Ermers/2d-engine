@@ -16,8 +16,7 @@ export default class ZoomComponent extends Component {
 
         if (Keyboard.isPressed("arrowleft"))
             attributes.cameraRotation -= 45;
-
-        attributes.zoom = lerp(attributes.zoom, Math.max(1, Math.min(Mouse.wheel, 16)), 0.8);
+        attributes.zoom = lerp(attributes.zoom, Math.max(1, Math.min(Mouse.wheel + 1, 16)), 0.8);
 
         Camera.rotation = lerp(Camera.rotation, attributes.cameraRotation, 0.02);
         Camera.zoom = lerp(Camera.zoom, attributes.zoom, attributes.zoomSpeed);

@@ -1,23 +1,22 @@
 /// <references lib="@types/node" />
 import * as esbuild from "esbuild";
-import { rm, stat, copyFile, mkdir } from "fs/promises";
+import { copy, pathExists, emptyDir } from "fs-extra";
 import { resolve, join } from 'path';
-const fileExists = async path => !!(await stat(path).catch(() => false));
+
 const cleanPlugin = {
     name: "clean build",
 
     setup(build) {
         build.onStart(async () => {
             console.clear();
-            const buildDir = resolve(build.initialOptions.outdir);
-            if (await fileExists(buildDir))
-                await rm(buildDir, { recursive: true });
+            const buildDir = resolve(build.initialOptions.outdir, '../');
+            if (await pathExists(buildDir))
+                await emptyDir(buildDir);
 
-            await mkdir(buildDir);
 
-            const html = resolve("index.html");
-            const target = join(buildDir, "index.html");
-            await copyFile(html, target)
+            await copy(resolve("index.html"), join(buildDir, "index.html"));
+
+            await copy(resolve("./assets"), join(buildDir, "./assets"));
         });
     }
 };
@@ -27,7 +26,7 @@ esbuild.build({
         'src/Runtime/index.ts',
         'src/Game/main.ts',
     ],
-    outdir: "./dist",
+    outdir: "./dist/scripts",
     bundle: true,
     format: "esm",
     splitting: true,
