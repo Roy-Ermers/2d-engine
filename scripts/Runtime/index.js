@@ -7,7 +7,7 @@ import {
   Runtime_default,
   TileMap,
   Vector2
-} from "../chunk-UVEQVABF.js";
+} from "../chunk-KOJFVHTC.js";
 export {
   Color,
   Component,
