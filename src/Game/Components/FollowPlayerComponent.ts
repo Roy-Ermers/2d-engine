@@ -1,26 +1,24 @@
-import Game, { Component, Entity, Vector2 } from 'game';
+import RigidbodyComponent from '@/Components/RigidbodyComponent';
+import Game, { Component, Entity, Vector2 } from 'Engine';
 
 export default class FollowPlayerComponent extends Component {
-    override get dependencies(): string[] {
-        return ["Rigidbody"];
-    }
+    override readonly dependencies = [RigidbodyComponent];
 
     override defaults = {
-        position: new Vector2(),
-        velocity: new Vector2(),
         speed: 1,
         distance: 16
     };
 
-    override update(attributes: this['defaults']): void {
+    override update(attributes: this['defaults'], entity: Entity): void {
         const player = Game.getEntity("player");
+        const rigidbody = entity.getComponent(RigidbodyComponent);
 
         if (!player)
             throw new Error("No player entity found.");
 
-        const distance = attributes.position.distance(player.position);
+        const distance = entity.transform.position.distance(player.transform.position);
 
         if (distance > attributes.distance)
-            attributes.velocity = attributes.position.minus(player.position).normalize().invert().multiply(attributes.speed).limit(attributes.distance);
+            rigidbody.velocity = entity.transform.position.minus(player.transform.position).normalize().invert().multiply(attributes.speed).limit(attributes.distance);
     }
 }

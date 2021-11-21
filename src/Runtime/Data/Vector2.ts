@@ -44,6 +44,10 @@ export default class Vector2 {
         );
     }
 
+    angle(target: Vector2) {
+        return Math.atan2(target.y - this.y, target.x - this.x);
+    }
+
     invert() {
         return this.multiply(-1);
     }

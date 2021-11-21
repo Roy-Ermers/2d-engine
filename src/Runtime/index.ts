@@ -14,7 +14,7 @@ Game.registerComponent(
 );
 
 export { default as Tilemap } from "@/Assets/Tilemap";
-export { default as Color } from "@/Color";
+export { default as Color } from "@/Renderer/Color";
 export { default as Component } from "@/Data/Component";
 export { default as Entity } from "@/Data/Entity";
 export { default as Vector2 } from "@/Data/Vector2";

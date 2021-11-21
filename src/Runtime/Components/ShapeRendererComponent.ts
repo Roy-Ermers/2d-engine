@@ -1,15 +1,12 @@
-import Game, { Entity } from 'game';
-import Color from '@/Color';
-import Component from '@/Data/Component';
+import Game, { Entity } from 'Engine';
+import Color from '@/Renderer/Color';
 import Vector2 from '@/Data/Vector2';
-import { Shape } from '@/Data/Shape';
+import { Shape } from '@/Renderer';
 import RenderComponent from './RenderComponent';
+import Convex from '@/Renderer/Convex';
 
 export default class ShapeRendererComponent extends RenderComponent {
-
     override defaults = {
-        position: new Vector2(),
-        rotation: 0,
         shapes: [
             {
                 type: "circle",
@@ -21,9 +18,15 @@ export default class ShapeRendererComponent extends RenderComponent {
         ] as Shape[]
     };
 
-    override render({ position, rotation, shapes }: this["defaults"]): void {
-        for (const shape of shapes) {
-            Game.canvas.drawShape(position, rotation, shape);
+    override getBounds(attributes: this['defaults']): Vector2[] {
+        return Convex.fromShapes(attributes.shapes);
+    }
+
+    override render(attributes: this["defaults"], entity: Entity): void {
+        for (const shape of attributes.shapes) {
+            Game.canvas.drawShape(entity.transform.position, entity.transform.rotation, shape);
         }
+
+        super.render(attributes, entity);
     }
 }

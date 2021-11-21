@@ -4,6 +4,7 @@ import Game from './Game';
 export default class Mouse {
     private static _x: number = 0;
     private static _y: number = 0;
+    private static _wheel: number = 0;
     private static mouseButtons: {
         left: boolean,
         right: boolean,
@@ -16,6 +17,10 @@ export default class Mouse {
 
     public static get y() {
         return this._y;
+    }
+
+    public static get wheel() {
+        return this._wheel;
     }
 
     public static get position() {
@@ -48,6 +53,10 @@ export default class Mouse {
     public static initialize() {
         window.addEventListener("click", e => e.preventDefault());
         window.addEventListener("contextmenu", e => e.preventDefault());
+        window.addEventListener("wheel", e => {
+            this._wheel += e.deltaY * -0.01;
+            e.preventDefault();
+        });
 
         window.addEventListener("mousemove", (e) => {
             this._x = e.clientX;

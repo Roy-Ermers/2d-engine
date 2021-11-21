@@ -1,4 +1,4 @@
-import Game from 'game';
+import Game from 'Engine';
 
 /**
  * @param {number} start
@@ -33,4 +33,25 @@ export function structuredClone(object: any): any {
     }
 
     return result;
+}
+
+export function generateId(size = 8) {
+    let id = '';
+    let bytes = crypto.getRandomValues(new Uint8Array(size));
+
+    while (size--) {
+        let byte = bytes[size] & 63;
+        if (byte < 36) {
+            // `0-9a-z`
+            id += byte.toString(36);
+        } else if (byte < 62) {
+            // `A-Z`
+            id += (byte - 26).toString(36).toUpperCase();
+        } else if (byte < 63) {
+            id += '#';
+        } else {
+            id += '$';
+        }
+    }
+    return id;
 }

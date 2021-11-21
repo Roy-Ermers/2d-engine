@@ -1,9 +1,9 @@
 import Tilemap, { Tile } from '@/Assets/Tilemap';
 import Vector2 from '@/Data/Vector2';
-import Camera from '@/Camera';
-import Color from '@/Color';
+import Camera from '@/Renderer/Camera';
+import Color from '@/Renderer/Color';
 import { DEGREE_TO_RADIAL } from '@/Helpers';
-import { Shape } from '@/Data/Shape';
+import { Shape } from '@/Renderer/Shape';
 
 export default class Canvas {
     get width() {
@@ -57,7 +57,7 @@ export default class Canvas {
         window.addEventListener("resize", () => this.resize());
         this.canvas.addEventListener("click", () => {
             console.log("requesting fullscreen");
-            this.canvas.requestFullscreen();
+            document.body.requestFullscreen();
         });
 
         this.resize();
@@ -69,13 +69,15 @@ export default class Canvas {
         // this.ctx.translate(-this.middle.x, -this.middle.y);
     }
 
-    circle(worldPosition: Vector2, rotation: number, width: number, color: Color, arc: [number, number] = [0, 360]) {
+    circle(worldPosition: Vector2, rotation: number, size: number, color: Color, arc: [number, number] = [0, 360]) {
         const position = Camera.worldToCameraSpace(worldPosition);
+        const localRotation = rotation + Camera.rotation;
 
         this.ctx.beginPath();
         this.ctx.fillStyle = color.toString();
+        this.ctx.lineWidth = 0;
 
-        this.ctx.arc(position.x, position.y, width / 2 * Camera.zoom, ((arc[0] + rotation) % 360) * DEGREE_TO_RADIAL, (arc[1] + rotation % 360) * DEGREE_TO_RADIAL);
+        this.ctx.arc(position.x, position.y, size / 2 * Camera.zoom, ((arc[0] + localRotation) % 360) * DEGREE_TO_RADIAL, (arc[1] + localRotation % 360) * DEGREE_TO_RADIAL);
         this.ctx.fill();
         this.ctx.closePath();
     }
@@ -97,10 +99,10 @@ export default class Canvas {
         this.ctx.closePath();
     }
 
-    polygon(worldPosition: Vector2, rotation: number, color: Color, indices: Vector2[]) {
+    private tracePolygon(worldPosition: Vector2, rotation: number, color: Color, indices: Vector2[]) {
         this.ctx.beginPath();
-        this.ctx.lineCap = "round";
-        this.ctx.strokeStyle = color.toString();
+        if (indices.length < 2)
+            return;
 
         const [start, ...points] = indices;
         const position = Camera.worldToCameraSpace(worldPosition.add(start.rotate(rotation)));
@@ -111,9 +113,22 @@ export default class Canvas {
             this.ctx.lineTo(next.x, next.y);
         }
 
-        this.ctx.fill();
+        this.ctx.lineTo(Math.floor(position.x), Math.floor(position.y));
         this.ctx.closePath();
     }
+
+    polygon(worldPosition: Vector2, rotation: number, color: Color, indices: Vector2[]) {
+        this.tracePolygon(worldPosition, rotation, color, indices);
+        this.ctx.fillStyle = color.toString();
+        this.ctx.fill();
+    }
+
+    wirePolygon(worldPosition: Vector2, rotation: number, color: Color, indices: Vector2[]) {
+        this.tracePolygon(worldPosition, rotation, color, indices);
+        this.ctx.strokeStyle = color.toString();
+        this.ctx.stroke();
+    }
+
 
     arc(offset: number, width: number = 90, rotation: number = 0, thickness: number = 16, color: Color = Color.white) {
         this.ctx.beginPath();
@@ -159,37 +174,53 @@ export default class Canvas {
         this.ctx.stroke();
     }
 
-    drawShape(position: Vector2, rotation: number, shape: Shape) {
+    drawShape(worldPosition: Vector2, localRotation: number, shape: Shape) {
         console.assert(shape !== undefined, "shape is undefined", shape);
+
         const { color, offset } = shape;
-        const localPosition = position.add(offset).rotate(rotation);
-        const localRotation = rotation + (shape.rotation ?? 0);
+        const shapeRotation = (shape.rotation ?? 0) + localRotation;
+        const localPosition = offset.rotate(localRotation).add(worldPosition);
 
         switch (shape.type) {
             case "box":
                 if (typeof shape.size == "number")
-                    this.box(localPosition, localRotation, color, shape.size);
+                    this.box(localPosition, shapeRotation, color, shape.size);
                 else if (shape.size instanceof Vector2)
-                    this.box(localPosition, localRotation, color, shape.size);
+                    this.box(localPosition, shapeRotation, color, shape.size);
                 break;
             case "circle":
-                this.circle(localPosition, localRotation, shape.size, color, shape.arc);
+                this.circle(localPosition, shapeRotation, shape.size, color, shape.arc);
                 break;
             case "polygon":
-                this.polygon(localPosition, localRotation, color, shape.indices);
+                this.polygon(localPosition, shapeRotation, color, shape.indices);
                 break;
         }
     }
 
     drawTile(worldPosition: Vector2, worldRotation: number, tileMap: Tilemap, tile: string | number | Tile) {
-        const position = Camera.worldToCameraSpace(worldPosition);
-
         const info = typeof tile == "object" ? tile : tileMap.getTile(tile);
 
+        const center = new Vector2(info.width * tileMap.magnitude, info.height * tileMap.magnitude).divide(2);
+        const position = Camera.worldToCameraSpace(worldPosition.minus(center));
+
+
         const size = tileMap.magnitude * Camera.zoom;
+        this.ctx.translate(position.x, position.y);
+        this.ctx.rotate((worldRotation + Camera.rotation) * DEGREE_TO_RADIAL);
+
         this.ctx.imageSmoothingEnabled = false;
-        this.ctx.drawImage(tileMap.image!, info.x, info.y, info.width, info.height, position.x, position.y, info.width * size, info.height * size);
+        this.ctx.drawImage(tileMap.image!,
+            info.x,
+            info.y,
+            info.width,
+            info.height,
+            (info.width * size) * .5,
+            (info.width * size) * .5,
+            info.width * size,
+            info.height * size
+        );
         this.ctx.imageSmoothingEnabled = true;
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 
     draw() {

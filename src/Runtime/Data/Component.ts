@@ -2,10 +2,9 @@ import Entity from '@/Data/Entity';
 
 export type ComponentType<T extends Component> = (new (...parameters: ConstructorParameters<typeof Component>) => T) & typeof Component;
 
+
 export default class Component {
-    get dependencies(): string[] {
-        return [];
-    }
+    readonly dependencies: typeof Component[] = []
 
     defaults?: any;
 

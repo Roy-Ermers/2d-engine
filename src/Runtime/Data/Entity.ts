@@ -1,123 +1,148 @@
-import Game from 'game';
-import { structuredClone } from '@/Helpers';
+import Game from 'Engine';
+import { generateId, structuredClone } from '@/Helpers';
 import Vector2 from '@/Data/Vector2';
 import RenderComponent from '@/Components/RenderComponent';
+import Component from './Component';
+import TransformComponent from '@/Components/TransformComponent';
+import { ComponentType } from '.';
+import ZoomComponent from 'src/Game/Components/ZoomComponent';
+
+const convexHullCache: Map<string, Vector2[]> = new Map();
 
 export default class Entity {
     public tags: Set<string>;
-    private _components: Set<string>;
+    private _components: Map<Component, any>;
     private _renderComponents: Set<string>;
-    public data: Record<string, any> = {};
+    private _id: string;
 
-    public get components(): string[] {
-        return [...this._components];
+    public get transform() {
+        return this.getComponent(TransformComponent);
     }
 
-    public get position(): Vector2 {
-        return this.data.position;
+    public get bounds() {
+        if (convexHullCache.has(this.id))
+            return convexHullCache.get(this.id)!;
+
+        const component = this.getAllComponents().find(x => x[0] instanceof RenderComponent);
+        if (!component) {
+            console.log(`Entity ${this.id} has no bounds.`);
+            return [];
+        }
+
+        const bounds = (component[0] as RenderComponent).getBounds(component[1]);
+        convexHullCache.set(this.id, bounds);
+
+        return bounds;
     }
 
-    public set position(value: Vector2) {
-        this.data.position = value;
+    public get id() {
+        return this._id;
     }
 
-    constructor();
-    constructor(components: string[]);
-    constructor(components: Record<string, any>);
-    constructor(component: string, data?: Record<string, any>);
-    constructor(component: string, tags: string[]);
-    constructor(component?: string | Record<string, any> | string[], data?: Record<string, any> | string[]) {
+    constructor() {
+        this._id = generateId();
         this.tags = new Set();
-        this._components = new Set();
+        this._components = new Map();
         this._renderComponents = new Set();
-        this.addComponent("Transform");
+        this.addComponent(TransformComponent);
+    }
 
-        if (Array.isArray(data)) {
-            this._components = new Set(data);
-
-            if (component)
-                this.addComponent(component);
+    start() {
+        for (const [component, data] of this._components) {
+            component?.start(data, this);
         }
+    }
 
-        else if (component) {
-            this.addComponent(component, data);
+    private callDestroyHooks() {
+        for (const [component, data] of this._components) {
+            component?.destroy(data, this);
         }
-
     }
 
     update() {
-        for (const componentName of this._components) {
-            const component = Game.components.get(componentName);
-            component?.update(this.data, this);
+        for (const [component, data] of this._components) {
+            component?.update(data, this);
 
             if (component instanceof RenderComponent)
-                component?.render(this.data, this);
+                component?.render(data, this);
         }
     }
 
     render() {
         for (const componentName of this._renderComponents) {
             const component = Game.components.get(componentName) as RenderComponent;
-            component?.render(this.data, this);
+            const data = this._components.get(component);
+
+            component?.render(data, this);
         }
     }
 
-    addComponent(components: string[]): void;
-    addComponent(components: Record<string, any>): void;
-    addComponent(component: string): void;
-    addComponent(component: string, data: Record<string, any>): void;
-    addComponent(component: string | Record<string, any> | string[], data?: Record<string, any>): void;
-    addComponent(component: string | Record<string, any> | string[], data?: Record<string, any>) {
+    removeComponent<t extends ComponentType<any>>(name: t) {
+        const _component = Game.components.get(name.name);
+
+        if (_component)
+            this._components.delete(_component);
+    }
+
+    addComponent<t extends ComponentType<any>>(names: t[]): void;
+    addComponent<t extends ComponentType<any>>(name: t): void;
+    addComponent<t extends ComponentType<any>>(name: t, data: Partial<InstanceType<t>["defaults"]>): void;
+    addComponent<t extends ComponentType<any>>(component: t | t[], data?: Partial<InstanceType<t>["defaults"]>) {
         if (Array.isArray(component)) {
-            for (const name of component) {
-                this.addComponent(name);
-            }
+            for (const _component of component)
+                this.addComponent(_component);
 
             return;
         }
+        else {
+            const _component = Game.components.get(component.name);
+            if (_component === undefined)
+                throw new Error(`Component ${component.name} not found.`);
 
-        else if (typeof component == "object") {
-            for (const [name, data] of Object.entries(component)) {
-                if (data === null)
-                    this.addComponent(name);
-                else
-                    this.addComponent(name, data);
-            }
+            if (_component.dependencies)
+                for (const dependency of _component.dependencies)
+                    this.addComponent(dependency);
 
-            return;
+            this._components.set(_component, { ..._component.defaults, ...data });
         }
+    }
 
-        if (typeof component != 'string')
-            throw new Error("Unknown method signature");
+    getComponent<t extends ComponentType<any>>(component: t): InstanceType<t>["defaults"] {
+        const _component = Game.components.get(component.name);
 
-        const newcomponent = Game.components.get(component);
+        if (_component == undefined)
+            throw new Error(`Component ${component.name} doesn't exist.`);
 
-        if (!newcomponent)
-            throw new Error(`Component "${component}" not found. Make sure you call Game.registerComponent first`);
+        return this._components.get(_component);
+    }
 
-        this.addComponent(newcomponent.dependencies);
-        data = { ...newcomponent.defaults, ...data };
-        this.data = { ...this.data, ...data };
-        this._components.add(component);
-
-        if (newcomponent instanceof RenderComponent)
-            this._renderComponents.add(component);
-
-        newcomponent.start(this.data, this);
+    getAllComponents() {
+        return [...this._components.entries()]
     }
 
     /**
      * Find a component by name.
      */
-    hasComponent(component: string): boolean {
-        return this._components.has(component);
+    hasComponent(component: ComponentType<any>): boolean {
+        const _component = Game.components.get(component.name);
+
+        if (_component == undefined)
+            return false;
+
+        return this._components.has(_component);
     }
 
+    destroy() {
+        this.callDestroyHooks();
+
+        Game.removeEntity(this);
+    }
 
     clone() {
-        const copy = new Entity(this.components);
+        const copy = new Entity();
         copy.tags = new Set(this.tags);
-        copy.data = structuredClone(this.data);
+        for (const [component, data] of this._components)
+            copy.addComponent(component.constructor as ComponentType<any>, structuredClone(data));
 
         return copy;
     }

@@ -1,11 +1,10 @@
-import Camera from '@/Camera';
-import Game, { Component, Keyboard, Vector2 } from 'game';
+import { Camera } from '@/Renderer';
+import RigidbodyComponent from '@/Components/RigidbodyComponent';
+import Game, { Component, Entity, Keyboard, Vector2 } from 'Engine';
 
 export default class KeyboardControllerComponent extends Component {
 
-    override get dependencies(): string[] {
-        return ["Rigidbody"];
-    }
+    override readonly dependencies = [RigidbodyComponent];
 
     override defaults = {
         speed: 1,
@@ -13,7 +12,8 @@ export default class KeyboardControllerComponent extends Component {
         velocity: new Vector2()
     };
 
-    override update(attributes: this['defaults']): void {
+    override update(attributes: this['defaults'], entity: Entity): void {
+        const rigidbody = entity.getComponent(RigidbodyComponent);
         let { speed, sprintSpeed } = attributes;
 
         if (Keyboard.isDown("shift"))
@@ -38,7 +38,7 @@ export default class KeyboardControllerComponent extends Component {
 
         direction = direction.rotate(-Camera.rotation);
 
-        attributes.velocity = attributes.velocity.lerp(direction.multiply(speed), 0.2);
+        rigidbody.velocity = rigidbody.velocity.add(direction);
     }
 
 }

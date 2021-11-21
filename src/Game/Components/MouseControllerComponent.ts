@@ -1,26 +1,24 @@
-import { Component, Mouse, Vector2 } from 'game';
+import RigidbodyComponent from '@/Components/RigidbodyComponent';
+import { Component, Entity, Mouse, Vector2 } from 'Engine';
 
 
 export default class MouseControllerComponent extends Component {
 
-    override get dependencies(): string[] {
-        return ["Rigidbody"];
-    }
+    override readonly dependencies = [RigidbodyComponent];
 
     override defaults = {
         speed: 1,
-        velocity: new Vector2(),
-        position: new Vector2()
     };
 
-    override update(attributes: this['defaults']): void {
+    override update(attributes: this['defaults'], entity: Entity): void {
         const { speed } = attributes;
+        const rigidbody = entity.getComponent(RigidbodyComponent)
 
         attributes.speed = Mouse.right ? 7.5 : 2.5;
         if (Mouse.middle)
-            attributes.speed = Mouse.position.minus(attributes.position).length;
+            attributes.speed = Mouse.position.minus(entity.transform.position).length;
 
-        attributes.velocity = Mouse.position.minus(attributes.position).normalize().multiply(speed);
+        rigidbody.velocity = Mouse.position.minus(entity.transform.position).normalize().multiply(speed);
     }
 
 }

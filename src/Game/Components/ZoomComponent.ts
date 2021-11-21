@@ -1,6 +1,6 @@
-import Camera from '@/Camera';
+import { Camera } from '@/Renderer';
 import { lerp } from '@/Helpers';
-import Game, { Color, Component, Keyboard, Vector2 } from 'game';
+import Game, { Color, Component, Keyboard, Mouse, Vector2 } from 'Engine';
 
 export default class ZoomComponent extends Component {
 
@@ -11,23 +11,16 @@ export default class ZoomComponent extends Component {
     };
 
     override update(attributes: this["defaults"]) {
-
         if (Keyboard.isPressed("arrowright"))
             attributes.cameraRotation += 45;
 
         if (Keyboard.isPressed("arrowleft"))
             attributes.cameraRotation -= 45;
 
-        if (Keyboard.isDown("arrowup"))
-            attributes.zoom += attributes.zoomSpeed;
+        attributes.zoom = lerp(attributes.zoom, Math.max(1, Math.min(Mouse.wheel, 16)), 0.8);
 
-        if (Keyboard.isDown("arrowdown") && attributes.zoom > 1)
-            attributes.zoom -= attributes.zoomSpeed;
-
-        Camera.rotation = lerp(Camera.rotation, attributes.cameraRotation, .05);
-        Camera.zoom = attributes.zoom;
-
-        Game.canvas.text(Vector2.zero, 0, Camera.rotation.toString(), Color.red);
+        Camera.rotation = lerp(Camera.rotation, attributes.cameraRotation, 0.02);
+        Camera.zoom = lerp(Camera.zoom, attributes.zoom, attributes.zoomSpeed);
     }
 
 }

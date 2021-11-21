@@ -1,5 +1,5 @@
 import Vector2 from '@/Data/Vector2';
-import Game from './Game';
+import Game from '../Game';
 
 console.log(Vector2);
 
@@ -18,7 +18,7 @@ export default class Camera {
             .minus(this.position)
             .rotate(rotation)
             .multiply(this.zoom)
-            .add(Game.canvas.middle);
+            .add(Game.canvas.middle)
     }
 
     public static cameraToWorldSpace(cameraPosition: Vector2) {

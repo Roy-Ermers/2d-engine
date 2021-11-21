@@ -1,6 +1,6 @@
 
 import { Pane } from 'tweakpane';
-import Game from 'game';
+import Game from 'Engine';
 
 export default class Debugger {
     static start() {
@@ -12,14 +12,14 @@ export default class Debugger {
         for (const entity of Game.entities) {
             const folder = (pane as any).addFolder({ title: `👾 ${[...entity.tags].join()}` });
 
-            for (const component of entity.components) {
-                const componentFolder = folder.addFolder({ title: `📦 ${component}` });
+            for (const [component, data] of entity.getAllComponents()) {
+                const componentFolder = folder.addFolder({ title: `📦 ${component.constructor.name}` });
 
-                const keys = Object.keys(Game.components.get(component)!.defaults);
+                const keys = Object.keys(data);
 
                 for (const key of keys) {
                     try {
-                        componentFolder.addInput(entity.data, key);
+                        componentFolder.addInput(data, key);
                     } catch (e) {
                         console.log(e);
                     }

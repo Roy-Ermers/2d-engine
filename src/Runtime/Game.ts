@@ -1,4 +1,4 @@
-import Canvas from '@/Canvas';
+import Canvas from '@/Renderer/Canvas';
 import Component, { ComponentType } from '@/Data/Component';
 import Entity from '@/Data/Entity';
 import Keyboard from '@/Keyboard';
@@ -62,6 +62,13 @@ export default class Game {
 
     public static registerEntity(entity: Entity) {
         this._entities.push(entity);
+        entity.start();
+    }
+
+    static removeEntity(entity: Entity) {
+        const index = this._entities.indexOf(entity);
+
+        this._entities.splice(index, 1);
     }
 
     public static createEntity(...tags: string[]) {
@@ -76,7 +83,7 @@ export default class Game {
 
     public static registerComponent(...components: ComponentType<any>[]) {
         for (const component of components) {
-            this._components.set(component.name.replace(/Component$/g, ''), new component());
+            this._components.set(component.name, new component());
         }
     }
 
@@ -96,22 +103,20 @@ export default class Game {
 
         if (Keyboard.isPressed("ctrl", "f1")) {
             this._debug = !this._debug;
-            // import("./Debug/Debugger.js")
-            //     .then(x => { console.log(x); x.default.start(); })
-            //     .catch(e => console.error("Failed to load debugger", e));
+            import("./Debug/Debugger.js")
+                .then(x => { console.log(x); x.default.start(); })
+                .catch(e => console.error("Failed to load debugger", e));
         }
 
 
-        if (this._paused) {
-            for (const entity of this._entities)
-                entity.render();
-        }
-        else {
-            for (const entity of this._entities)
+        for (const entity of this._entities) {
+            entity.render();
+
+            if (!this._paused)
                 entity.update();
-
-            this.updateCallbacks.forEach(x => x());
         }
+
+        this.updateCallbacks.forEach(x => x());
 
         Keyboard.clearFrame();
         requestAnimationFrame(this.loop.bind(this));

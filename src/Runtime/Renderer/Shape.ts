@@ -1,4 +1,4 @@
-import Color from '@/Color';
+import { Color } from '@/Renderer';
 import Vector2 from '@/Data/Vector2';
 
 export type Shape = {
