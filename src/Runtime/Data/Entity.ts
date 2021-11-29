@@ -6,8 +6,10 @@ import Component from './Component';
 import TransformComponent from '@/Components/TransformComponent';
 import { ComponentType } from '.';
 import ZoomComponent from 'src/Game/Components/ZoomComponent';
+import IBounds from '@/Renderer/IBounds';
 
-const convexHullCache: Map<string, Vector2[]> = new Map();
+const convexHullCache: Map<string, IBounds> = new Map();
+(window as any).convexHullCache = convexHullCache;
 
 export default class Entity {
     public tags: Set<string>;
@@ -19,14 +21,17 @@ export default class Entity {
         return this.getComponent(TransformComponent);
     }
 
-    public get bounds() {
+    public get bounds(): IBounds {
         if (convexHullCache.has(this.id))
             return convexHullCache.get(this.id)!;
 
         const component = this.getAllComponents().find(x => x[0] instanceof RenderComponent);
         if (!component) {
             console.log(`Entity ${this.id} has no bounds.`);
-            return [];
+            return {
+                box: [],
+                complex: []
+            };
         }
 
         const bounds = (component[0] as RenderComponent).getBounds(component[1]);
@@ -103,7 +108,14 @@ export default class Entity {
                 for (const dependency of _component.dependencies)
                     this.addComponent(dependency);
 
+
+            if (this.hasComponent(component)) {
+                console.warn(`Entity ${this.id} already has a ${component.name}.`);
+                return;
+            }
+
             this._components.set(_component, { ..._component.defaults, ...data });
+            _component?.start({ ..._component.defaults, ...data }, this);
         }
     }
 

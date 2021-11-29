@@ -5,6 +5,11 @@ export default class Keyboard {
     public static initialize() {
         window.addEventListener("keydown", e => this.handleKeyDown(e));
         window.addEventListener("keyup", e => this.handleKeyUp(e));
+        window.addEventListener("blur", () => this.clearAll());
+    }
+    static clearAll() {
+        this.pressedKeys.clear();
+        this.currentFrame.clear();
     }
 
     private static handleKeyDown(event: KeyboardEvent) {

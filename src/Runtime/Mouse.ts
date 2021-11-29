@@ -55,7 +55,6 @@ export default class Mouse {
         window.addEventListener("contextmenu", e => e.preventDefault());
         window.addEventListener("wheel", e => {
             this._wheel += e.deltaY * -0.01;
-            e.preventDefault();
         });
 
         window.addEventListener("mousemove", (e) => {
