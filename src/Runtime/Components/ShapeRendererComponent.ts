@@ -4,6 +4,7 @@ import Vector2 from '@/Data/Vector2';
 import { Shape } from '@/Renderer';
 import RenderComponent from './RenderComponent';
 import Convex from '@/Renderer/Convex';
+import IBounds from '@/Renderer/IBounds';
 
 export default class ShapeRendererComponent extends RenderComponent {
     override defaults = {
@@ -18,7 +19,7 @@ export default class ShapeRendererComponent extends RenderComponent {
         ] as Shape[]
     };
 
-    override getBounds(attributes: this['defaults']): Vector2[] {
+    override getBounds(attributes: this['defaults']): IBounds {
         return Convex.fromShapes(attributes.shapes);
     }
 

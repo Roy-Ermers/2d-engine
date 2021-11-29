@@ -1,4 +1,5 @@
 import Game from 'Engine';
+import Vector2 from './Data/Vector2';
 
 /**
  * @param {number} start
@@ -54,4 +55,31 @@ export function generateId(size = 8) {
         }
     }
     return id;
+}
+
+export function pointInPolygon(point: Vector2, indices: Vector2[]) {
+    let inside = false;
+
+    let j = indices.length - 1;
+    for (let i = 0; i < indices.length; i++) {
+        const current = indices[i];
+        const next = indices[j];
+
+        if (point.x === current.x && point.y === current.y)
+            return true;
+
+        if ((current.y > point.y) != (next.y > point.y)) {
+            const slope = (point.x - current.x) * (next.y - current.y) - (next.x - current.x) * (point.y - current.y);
+
+            if (slope == 0)
+                return true;
+
+            if ((slope < 0) != (next.y < current.y))
+                inside = !inside;
+        }
+
+        j = i;
+    }
+
+    return inside;
 }
