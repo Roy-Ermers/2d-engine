@@ -147,7 +147,10 @@ export default class Vector2 {
     }
 
     copy() {
-        return this;
+        return new Vector2(
+            this.x,
+            this.y
+        );
     }
 
     toString() {
