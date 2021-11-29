@@ -8,5 +8,9 @@
     "esbuild": "^0.13.12",
     "fs-extra": "^10.0.0",
     "tweakpane": "^3.0.5"
+  },
+  "devDependencies": {
+    "connect": "^3.7.0",
+    "middleware-static-livereload": "^1.2.21"
   }
 }
