@@ -9,7 +9,7 @@ export default class Debugger {
 
         Game.onUpdate(() => pane.refresh());
 
-        for (const entity of Game.entities) {
+        for (const entity of Game.getEntities()) {
             const folder = (pane as any).addFolder({ title: `👾 ${[...entity.tags].join()}` });
 
             for (const [component, data] of entity.getAllComponents()) {
