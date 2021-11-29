@@ -2,16 +2,19 @@ import Canvas from '@/Renderer/Canvas';
 import Component, { ComponentType } from '@/Data/Component';
 import Entity from '@/Data/Entity';
 import Keyboard from '@/Keyboard';
+import SpatialMap from './Data/SpatialMap';
 
 export default class Game {
     private static _canvas: Canvas = new Canvas();
-    private static _entities: Entity[] = [];
+    private static _entities: Map<string, Entity> = new Map();
     private static _components: Map<string, Component> = new Map();
     private static _time = 0;
     private static updateCallbacks: (() => void)[] = [];
 
     private static _paused = false;
     private static _debug = true;
+
+    public static spatialMap: SpatialMap = new SpatialMap(512);
 
     public static get debug() {
         return this._debug;
@@ -41,34 +44,33 @@ export default class Game {
         return this._components;
     }
 
-    public static get entities() {
-        return this._entities;
-    }
 
     public static start() {
         requestAnimationFrame(this.loop.bind(this));
     }
 
-    public static getEntity(...tags: string[]) {
-        return this._entities.find(x => !tags.some(y => !x.tags.has(y)));
+    public static getEntityByTags(...tags: string[]) {
+        return [...this._entities.values()].find(x => !tags.some(y => !x.tags.has(y)));
+    }
+
+    public static getEntityById(id: string) {
+        return this._entities.get(id);
     }
 
     public static getEntities(...tags: string[]) {
         if (tags.length == 0)
-            return this._entities;
+            return [...this._entities.values()];
 
-        return this._entities.filter(x => !tags.some(y => !x.tags.has(y)));
+        return [...this._entities.values()].filter(x => !tags.some(y => !x.tags.has(y)));
     }
 
     public static registerEntity(entity: Entity) {
-        this._entities.push(entity);
+        this._entities.set(entity.id, entity);
         entity.start();
     }
 
     static removeEntity(entity: Entity) {
-        const index = this._entities.indexOf(entity);
-
-        this._entities.splice(index, 1);
+        this._entities.delete(entity.id);
     }
 
     public static createEntity(...tags: string[]) {
@@ -77,7 +79,7 @@ export default class Game {
         for (const tag of tags)
             entity.tags.add(tag);
 
-        this._entities.push(entity);
+        this._entities.set(entity.id, entity);
         return entity;
     }
 
@@ -93,6 +95,7 @@ export default class Game {
 
     private static loop() {
         this.canvas.draw();
+
         this._time++;
         if (this._time > 60)
             this._time = 0;
@@ -103,13 +106,13 @@ export default class Game {
 
         if (Keyboard.isPressed("ctrl", "f1")) {
             this._debug = !this._debug;
-            import("./Debug/Debugger.js")
-                .then(x => { console.log(x); x.default.start(); })
-                .catch(e => console.error("Failed to load debugger", e));
+            // import("./Debug/Debugger.js")
+            //     .then(x => { console.log(x); x.default.start(); })
+            //     .catch(e => console.error("Failed to load debugger", e));
         }
 
 
-        for (const entity of this._entities) {
+        for (const entity of this._entities.values()) {
             entity.render();
 
             if (!this._paused)
@@ -119,8 +122,10 @@ export default class Game {
         this.updateCallbacks.forEach(x => x());
 
         Keyboard.clearFrame();
+
         requestAnimationFrame(this.loop.bind(this));
     }
 }
 
+(window as any).Game = Game;
 Game.start();
