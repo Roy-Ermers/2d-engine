@@ -10,6 +10,7 @@ import MouseControllerComponent from './Components/MouseControllerComponent';
 import RotateComponent from './Components/RotateComponent';
 import ZoomComponent from './Components/ZoomComponent';
 import Convex from '@/Renderer/Convex';
+import MouseComponent from './Components/MouseComponent';
 
 Game.registerComponent(
     MouseControllerComponent,
@@ -17,46 +18,21 @@ Game.registerComponent(
     FollowPlayerComponent,
     ZoomComponent,
     RotateComponent,
-    CameraFollowComponent
+    CameraFollowComponent,
+    MouseComponent
 );
 const shapes: Shape[] = [
     {
-        offset: new Vector2(16, 16),
-        rotation: 0,
-        color: Color.red,
-        type: "box",
-        size: 32
-    },
-    {
-        offset: new Vector2(-16, -16),
-        rotation: 45,
-        color: Color.red,
-        type: "box",
-        size: 32
-    },
-    {
-        offset: new Vector2(16, -16),
-        rotation: 0,
-        color: Color.red,
-        type: "circle",
-        size: 32
-    },
-    {
-        offset: new Vector2(-16, 16),
+        offset: Vector2.zero,
         rotation: 225,
         color: Color.red,
         type: "circle",
-        size: 32,
-        arc: [0, 180]
+        size: 32
     }
 ];
 
-const points = Convex.convertShapesToPoints(shapes);
-
 async function start() {
     Game.canvas.background = Color.black;
-    Camera.zoom = 4;
-
 
     const tileMap = await Tilemap.load("assets/tilemap.png", { tileWidth: 16, tileHeight: 16 });
 
@@ -66,7 +42,7 @@ async function start() {
         tileMap,
         tile: [13, 14, 15]
     });
-    player.addComponent([CameraFollowComponent, KeyboardControllerComponent, ZoomComponent]);
+    player.addComponent([CameraFollowComponent, KeyboardControllerComponent, ZoomComponent, RotateComponent]);
 
 
     const enemy = Game.createEntity("enemy");
@@ -75,25 +51,13 @@ async function start() {
         shapes
     });
 
-    Game.onUpdate(() => {
-        Game.canvas.wirePolygon(enemy.transform.position.add(100, 0), 0, Color.green, points);
-    });
+    for (let i = 0; i < 1200; i++) {
+        const clone = enemy.clone();
+        clone.transform.position = Vector2.random.multiply(1600);
+        clone.getComponent(ShapeRendererComponent).shapes[0].color = Color.random();
 
-    const circle = Game.createEntity("circle");
-    circle.transform.position = Vector2.zero;
-    circle.addComponent(ShapeRendererComponent, {
-        shapes: [
-            {
-                type: "circle",
-                size: 32,
-                color: Color.blue,
-                offset: new Vector2(0, 0),
-                rotation: 180,
-                arc: [0, 180]
-            }
-        ]
-    });
-    circle.addComponent(RotateComponent);
+        Game.registerEntity(clone);
+    }
 }
 
 start();
