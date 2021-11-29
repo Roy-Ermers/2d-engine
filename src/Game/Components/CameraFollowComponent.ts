@@ -16,7 +16,7 @@ export default class CameraFollowComponent extends Component {
         if (Game.debug) {
             Game.canvas.vector(
                 Camera.cameraToWorldSpace(
-                    new Vector2(50, 50).minus(Game.canvas.middle)
+                    new Vector2(50, 50)
                 ),
                 0,
                 Vector2.up.multiply(40).divide(Camera.zoom),

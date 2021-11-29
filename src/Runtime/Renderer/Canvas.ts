@@ -4,6 +4,7 @@ import Camera from '@/Renderer/Camera';
 import Color from '@/Renderer/Color';
 import { DEGREE_TO_RADIAL } from '@/Helpers';
 import { Shape } from '@/Renderer/Shape';
+import Game from 'Engine';
 
 export default class Canvas {
     get width() {
@@ -15,17 +16,11 @@ export default class Canvas {
     }
 
     get middle() {
-        return new Vector2(
-            this.canvas.width / 2,
-            this.canvas.height / 2
-        );
+        return this._size.divide(2);
     }
 
     get size() {
-        return new Vector2(
-            this.canvas.width,
-            this.canvas.height
-        );
+        return this._size;
     }
 
     get element() {
@@ -43,6 +38,7 @@ export default class Canvas {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private _background?: Color;
+    private _size: Vector2 = Vector2.one;
 
     constructor() {
         this.canvas = document.createElement("canvas");
@@ -63,21 +59,14 @@ export default class Canvas {
         this.resize();
     }
 
-    rotate(angle: number) {
-        // this.ctx.translate(this.middle.x, this.middle.y);
-        // // this.ctx.rotate(angle * DEGREE_TO_RADIAL);
-        // this.ctx.translate(-this.middle.x, -this.middle.y);
-    }
-
     circle(worldPosition: Vector2, rotation: number, size: number, color: Color, arc: [number, number] = [0, 360]) {
         const position = Camera.worldToCameraSpace(worldPosition);
         const localRotation = rotation + Camera.rotation;
 
         this.ctx.beginPath();
         this.ctx.fillStyle = color.toString();
-        this.ctx.lineWidth = 0;
 
-        this.ctx.arc(position.x, position.y, size / 2 * Camera.zoom, ((arc[0] + localRotation) % 360) * DEGREE_TO_RADIAL, (arc[1] + localRotation % 360) * DEGREE_TO_RADIAL);
+        this.ctx.arc(position.x, position.y, size / 2 * Camera.zoom, (arc[0] + localRotation) * DEGREE_TO_RADIAL, arc[1] + localRotation * DEGREE_TO_RADIAL);
         this.ctx.fill();
         this.ctx.closePath();
     }
@@ -100,9 +89,9 @@ export default class Canvas {
     }
 
     private tracePolygon(worldPosition: Vector2, rotation: number, color: Color, indices: Vector2[]) {
-        this.ctx.beginPath();
         if (indices.length < 2)
             return;
+        this.ctx.beginPath();
 
         const [start, ...points] = indices;
         const position = Camera.worldToCameraSpace(worldPosition.add(start.rotate(rotation)));
@@ -141,14 +130,20 @@ export default class Canvas {
         this.ctx.closePath();
     }
 
-    text(worldPosition: Vector2, worldRotation: number, string: string, color: Color = Color.black, size: number = 16) {
-        const position = Camera.worldToCameraSpace(worldPosition);
+    text(screenPosition: Vector2, rotation: number, string: string, color: Color = Color.black, size: number = 16) {
         this.ctx.font = `${size}px sans-serif`;
+        const position = screenPosition;
 
         this.ctx.strokeStyle = color.toString();
         this.ctx.fillStyle = color.toString();
 
-        this.ctx.fillText(string, position.x, position.y);
+        const lines = string.split('\n');
+        let i = 0;
+
+        for (const line of lines) {
+            i += size * 1.5;
+            this.ctx.fillText(line.replaceAll(/\t/g, '    '), position.x, position.y + i);
+        }
     }
 
     vector(worldPosition: Vector2, worldRotation: number, vector: Vector2, color: Color = Color.green) {
@@ -200,11 +195,11 @@ export default class Canvas {
     drawTile(worldPosition: Vector2, worldRotation: number, tileMap: Tilemap, tile: string | number | Tile) {
         const info = typeof tile == "object" ? tile : tileMap.getTile(tile);
 
-        const center = new Vector2(info.width * tileMap.magnitude, info.height * tileMap.magnitude).divide(2);
-        const position = Camera.worldToCameraSpace(worldPosition.minus(center));
+        this.ctx.fillStyle = Color.red.toString();
 
-
+        const position = Camera.worldToCameraSpace(worldPosition);
         const size = tileMap.magnitude * Camera.zoom;
+
         this.ctx.translate(position.x, position.y);
         this.ctx.rotate((worldRotation + Camera.rotation) * DEGREE_TO_RADIAL);
 
@@ -214,8 +209,8 @@ export default class Canvas {
             info.y,
             info.width,
             info.height,
-            (info.width * size) * .5,
-            (info.width * size) * .5,
+            info.width * size * -.5,
+            info.width * size * -.5,
             info.width * size,
             info.height * size
         );
@@ -232,5 +227,7 @@ export default class Canvas {
     resize() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+
+        this._size = new Vector2(this.canvas.width, this.canvas.height);
     }
 }
